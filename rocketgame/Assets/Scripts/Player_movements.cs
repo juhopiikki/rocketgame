@@ -11,7 +11,7 @@ public class Player_movements : MonoBehaviour {
         // SpriteRenderer sprRend = gameObject.AddComponent<SpriteRenderer>() as SpriteRenderer;
 
         rb = gameObject.GetComponent<Rigidbody2D>() as Rigidbody2D;
-        rb.bodyType = RigidbodyType2D.Kinematic;
+        //rb.bodyType = RigidbodyType2D.Kinematic;
     }
 
 	void Update()
@@ -31,12 +31,12 @@ public class Player_movements : MonoBehaviour {
 
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-        	rb.angularVelocity = rb.angularVelocity + 0.6f;
+        	rb.angularVelocity = rb.angularVelocity + 1.0f;
         	//rb.velocity = rb.velocity + new Vector2(-0.2f, 0.0f);
         }
         if (Input.GetKey(KeyCode.RightArrow))
         {
-        	rb.angularVelocity = rb.angularVelocity - 0.6f;
+        	rb.angularVelocity = rb.angularVelocity - 1.0f;
         	// rb.velocity = rb.velocity + new Vector2(0.2f, 0.0f);
         }
     }
