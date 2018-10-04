@@ -6,6 +6,10 @@ public class Player_movements : MonoBehaviour {
 
 	private Rigidbody2D rb;
 
+	public float speedScale;
+	public float rotationSpeedScale;
+	public float rotationScale;
+
 	void Awake()
     {
         // SpriteRenderer sprRend = gameObject.AddComponent<SpriteRenderer>() as SpriteRenderer;
@@ -22,7 +26,7 @@ public class Player_movements : MonoBehaviour {
     	Debug.Log("right: " + rb.transform.right);
         if (Input.GetKey(KeyCode.UpArrow))
         {
-        	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * 0.1f, rb.transform.right[0] * 0.1f);
+        	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * speedScale, rb.transform.right[0] * speedScale);
         	//rb.AddForce(rb.transform.right * 1);
 //        	rb.velocity = rb.velocity + new Vector2(rb.trasform.rotation, 0.2f);
 //        	rb.angularVelocity = rb.angularVelocity + 0.2f; 
@@ -31,12 +35,14 @@ public class Player_movements : MonoBehaviour {
 
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-        	rb.angularVelocity = rb.angularVelocity + 1.0f;
+        	rb.angularVelocity = rb.angularVelocity + 1.0f * rotationScale;
+        	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * rotationSpeedScale, rb.transform.right[0] * rotationSpeedScale);
         	//rb.velocity = rb.velocity + new Vector2(-0.2f, 0.0f);
         }
         if (Input.GetKey(KeyCode.RightArrow))
         {
-        	rb.angularVelocity = rb.angularVelocity - 1.0f;
+        	rb.angularVelocity = rb.angularVelocity - 1.0f * rotationScale;
+        	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * rotationSpeedScale, rb.transform.right[0] * rotationSpeedScale);
         	// rb.velocity = rb.velocity + new Vector2(0.2f, 0.0f);
         }
     }
