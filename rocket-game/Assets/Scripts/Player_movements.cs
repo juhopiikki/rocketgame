@@ -12,23 +12,30 @@ public class Player_movements : MonoBehaviour {
 	public float rotationSpeedScale;
 	public float rotationScale;
 
-	public ButtonActions buttonActions;
-
 	// public vector for center of mass
 	public Vector3 com;	// X: to right/left axis from ship, Y: to forward/backward from ship.
 
-	// text object for HP
-	public Text HPtext;
+    // text object for HP
+    public Text HPtext;
 
 	// hit points
 	public float HP;
 
-	// pause button panel
-	public GameObject pausePanel;
+    // pause button panel
+    public GameObject pausePanel;
     public GameObject lossPanel;
+    public GameObject flameTextureL;
+    public GameObject flameTextureR;
 
 	void Awake()
     {
+        // pause button panel
+        pausePanel = GameObject.FindGameObjectsWithTag("PauseMenu")[0];
+        lossPanel = GameObject.FindGameObjectsWithTag("LosePanel")[0];
+
+        // text object for HP
+        HPtext = GameObject.Find("HP text").GetComponent<Text>();
+
         rb = gameObject.GetComponent<Rigidbody2D>() as Rigidbody2D;
         rb.centerOfMass = com;
         HP = 10;
@@ -43,10 +50,12 @@ public class Player_movements : MonoBehaviour {
 
 	void Update()
     {
+    	flameTextureR.SetActive(false);
+    	flameTextureL.SetActive(false);
+
     	if(HP < 1) {
     		// game over
             lossPanel.SetActive(true);
-    		//buttonActions.restartCurrentScene();
     	}
     	// touch screen touches
     	bool left = false;
@@ -77,6 +86,8 @@ public class Player_movements : MonoBehaviour {
 		if (Input.GetKey(KeyCode.LeftArrow) && Input.GetKey(KeyCode.RightArrow))                
         {
         	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * speedScale, rb.transform.right[0] * speedScale);
+        	flameTextureR.SetActive(true);
+    		flameTextureL.SetActive(true);
         	//rb.AddForce(rb.transform.right * 1);
 //        	rb.velocity = rb.velocity + new Vector2(rb.trasform.rotation, 0.2f);
 //        	rb.angularVelocity = rb.angularVelocity + 0.2f; 
@@ -85,12 +96,14 @@ public class Player_movements : MonoBehaviour {
 
         if (Input.GetKey(KeyCode.LeftArrow))
         {
+        	flameTextureR.SetActive(true);
         	rb.angularVelocity = rb.angularVelocity + 1.0f * rotationScale;
         	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * rotationSpeedScale, rb.transform.right[0] * rotationSpeedScale);
         	//rb.velocity = rb.velocity + new Vector2(-0.2f, 0.0f);
         }
         if (Input.GetKey(KeyCode.RightArrow))
         {
+        	flameTextureL.SetActive(true);
         	rb.angularVelocity = rb.angularVelocity - 1.0f * rotationScale;
         	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * rotationSpeedScale, rb.transform.right[0] * rotationSpeedScale);
         	// rb.velocity = rb.velocity + new Vector2(0.2f, 0.0f);
@@ -120,9 +133,12 @@ public class Player_movements : MonoBehaviour {
         }
 
         // take HP
-        HP = Mathf.Max(0, HP - Mathf.RoundToInt(collision.relativeVelocity.magnitude));
-        HPtext.text = "HP: " + HP.ToString() + "/10";
-        Debug.Log("HP: " + HP);
+        if (collision.otherCollider.GetType() == typeof(PolygonCollider2D))
+        {
+        	HP = Mathf.Max(0, HP - Mathf.RoundToInt(collision.relativeVelocity.magnitude));
+        	HPtext.text = "HP: " + HP.ToString() + "/10";
+        }
+        Debug.Log("Collider type: " + collision.otherCollider.GetType() + " new HP: " + HP);
     }
 
     private void PauseGame()
