@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,150 +8,355 @@ public class Player_movements : MonoBehaviour {
 	private Rigidbody2D rb;
 
 	// scales to acceleration
-	public float speedScale;
-	public float rotationSpeedScale;
-	public float rotationScale;
+	public float speedScale, brakingScale, rotationSpeedScale, rotationScale, rotationSlowingScale;
 
 	// public vector for center of mass
 	public Vector3 com;	// X: to right/left axis from ship, Y: to forward/backward from ship.
 
     // text object for HP
-    public Text HPtext;
+    //public Text HPtext;
+    //public Slider HPSlider;
+    public Image HPImage;
+    public Color HPfull, HPempty, HPcollide;
 
 	// hit points
 	public float HP;
+    public float MaxHP;
+    private int healingHP;
+    public Text countText;
 
     // pause button panel
-    public GameObject pausePanel;
-    public GameObject lossPanel;
-    public GameObject flameTextureL;
-    public GameObject flameTextureR;
+    public GameObject pausePanel, pauseToggles, lossPanel, winButtons;
+    public GameObject flameTextureL, flameTextureR;
+    public GameObject flameTextureR_F, flameTextureL_F;
+
+    public Toggle flipControlsToggle;
+    public bool flipControls;
+
+    public Toggle brakingEnableToggle;
+    public bool brakingEnable;
+
+    // to freeze movements on pause and after death
+    public bool gameOn;
+
+    // camera
+    public GameObject mainCamera;
+
+    // explode objects
+    public GameObject explodes, HPImageUpgraded, astronaut;
+    public astronaut astro;
+
+    public GameObject spark;
 
 	void Awake()
     {
         // pause button panel
-        pausePanel = GameObject.FindGameObjectsWithTag("PauseMenu")[0];
-        lossPanel = GameObject.FindGameObjectsWithTag("LosePanel")[0];
+        try {
+            pausePanel = GameObject.FindGameObjectsWithTag("PauseMenu")[0];
+            pauseToggles = GameObject.FindGameObjectsWithTag("PauseToggles")[0];
+            winButtons = GameObject.FindGameObjectsWithTag("winButtons")[0];
 
-        // text object for HP
-        HPtext = GameObject.Find("HP text").GetComponent<Text>();
+            lossPanel = GameObject.FindGameObjectsWithTag("LosePanel")[0];
+            // text object for HP
+            //HPtext = GameObject.Find("HP text").GetComponent<Text>();
+            HPImage = GameObject.Find("HealthBar").GetComponent<Image>();
+
+            // flip controls toggle
+            flipControlsToggle = GameObject.Find("FlipControlsToggle").GetComponent<Toggle>();
+            flipControls = flipControlsToggle.isOn;
+
+            // braking toggle
+            brakingEnableToggle = GameObject.Find("BrakingEnableToggle").GetComponent<Toggle>();
+            brakingEnable = brakingEnableToggle.isOn;
+
+            mainCamera = GameObject.Find("Main Camera");
+
+        } catch {
+            Debug.Log("Some gameobject was not found.");
+        }
+
+        if(PlayerPrefs.GetInt("shieldUpgrade") == 1) {
+            MaxHP = 200;
+            HP = MaxHP;
+
+            GameObject.Find("HPImage").SetActive(false);
+            HPImageUpgraded.SetActive(true);
+            HPImage = GameObject.Find("HealthBarUpgraded").GetComponent<Image>();
+
+        }
 
         rb = gameObject.GetComponent<Rigidbody2D>() as Rigidbody2D;
         rb.centerOfMass = com;
-        HP = 10;
+        HP = 100;
+        MaxHP = HP;
+        healingHP = 50;
         Debug.Log("HP: " + HP);
-        HPtext.text = "HP: " + HP.ToString() + "/10";
+        
         pausePanel.SetActive(false);
+        pauseToggles.SetActive(false);
         lossPanel.SetActive(false);
+        winButtons.SetActive(false);
+
+        brakingEnableToggle.isOn = PlayerPrefs.GetInt("brakeToggle") != 0;
+        flipControlsToggle.isOn = PlayerPrefs.GetInt("flipToggle") != 0;
+
         // give speed scales a prescale so it's easier to compare them
         speedScale /= 100;
         rotationSpeedScale /= 100;
+        brakingScale /= 100;
+
+        flipControls = flipControlsToggle.isOn;
+        brakingEnable = brakingEnableToggle.isOn;
+
+        gameOn = true;
+
+        flameTextureR.SetActive(false);
+        flameTextureL.SetActive(false);
+        flameTextureR_F.SetActive(false);
+        flameTextureL_F.SetActive(false);
+    }
+
+    void Start() {
+        FindObjectOfType<AudioManager>().PlayMusic("music1");
     }
 
 	void Update()
     {
-    	flameTextureR.SetActive(false);
-    	flameTextureL.SetActive(false);
+        if(gameOn) {
+            flipControls = flipControlsToggle.isOn;
+            brakingEnable = brakingEnableToggle.isOn;
 
-    	if(HP < 1) {
-    		// game over
-            lossPanel.SetActive(true);
-    	}
-    	// touch screen touches
-    	bool left = false;
-    	bool right = false;
-    	foreach (Touch touch in Input.touches) {
-	    	if(touch.position.x < Screen.width / 2) {
-	    		left = true;
-    		}
-    		if(touch.position.x >= Screen.width / 2) {
-    			right = true;
-    		}
-	    }
-	    if(left && right) {
-        	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * speedScale, rb.transform.right[0] * speedScale);
-	    } else if (left) {
-        	rb.angularVelocity = rb.angularVelocity - 1.0f * rotationScale;
-        	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * rotationSpeedScale, rb.transform.right[0] * rotationSpeedScale);
-    	} else if (right) {
-        	rb.angularVelocity = rb.angularVelocity + 1.0f * rotationScale;
-        	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * rotationSpeedScale, rb.transform.right[0] * rotationSpeedScale);
-    	}
+        	if(HP < 1) {
+                FindObjectOfType<AudioManager>().Stop("engine");
+                HPImage.fillAmount = 0;
+        		// game over
+                lossPanel.SetActive(true);
+                explodes.transform.position = rb.transform.position;
+                explodes.transform.rotation = rb.transform.rotation;
+                
+                Vector3 endPos = rb.transform.position;
+                Vector2 endVelocity = rb.velocity;
 
-//    	Debug.Log("angular: " + rb.angularVelocity);
-//    	Debug.Log("rotation: " + rb.rotation);
-//    	Debug.Log("forward: " + rb.transform.forward);
-//    	Debug.Log("right: " + rb.transform.right);
-        //if (Input.GetKey(KeyCode.UpArrow))
-		if (Input.GetKey(KeyCode.LeftArrow) && Input.GetKey(KeyCode.RightArrow))                
-        {
-        	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * speedScale, rb.transform.right[0] * speedScale);
-        	flameTextureR.SetActive(true);
-    		flameTextureL.SetActive(true);
-        	//rb.AddForce(rb.transform.right * 1);
-//        	rb.velocity = rb.velocity + new Vector2(rb.trasform.rotation, 0.2f);
-//        	rb.angularVelocity = rb.angularVelocity + 0.2f; 
-//        	rb.velocity = rb.velocity + new Vector2(0.0f, 0.2f);
-        }
+                gameOn = false;
+                // set self inactive
+                gameObject.SetActive(false);
+                explodes.SetActive(true);
+                Rigidbody2D[] children = explodes.GetComponentsInChildren<Rigidbody2D>();;
+                foreach(Rigidbody2D child in children)
+                {
+                    //Vector3 diff = endPos - child.transform.position;
+                    Vector3 locPos = child.transform.localPosition;
+                    child.velocity = endVelocity + new Vector2(locPos.y, locPos.x) * 12; //new Vector2(diff.x, diff.y);
+                }
+                astronaut.SetActive(false);
+                astro.explode();
+                FindObjectOfType<AudioManager>().Play("explosion");
+        	}
+        	// touch screen touches
+        	bool left = false;
+        	bool leftBottom = false;
+        	bool right = false;
+        	bool rightBottom = false;
+        	bool top = false;
 
-        if (Input.GetKey(KeyCode.LeftArrow))
-        {
-        	flameTextureR.SetActive(true);
-        	rb.angularVelocity = rb.angularVelocity + 1.0f * rotationScale;
-        	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * rotationSpeedScale, rb.transform.right[0] * rotationSpeedScale);
-        	//rb.velocity = rb.velocity + new Vector2(-0.2f, 0.0f);
-        }
-        if (Input.GetKey(KeyCode.RightArrow))
-        {
-        	flameTextureL.SetActive(true);
-        	rb.angularVelocity = rb.angularVelocity - 1.0f * rotationScale;
-        	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * rotationSpeedScale, rb.transform.right[0] * rotationSpeedScale);
-        	// rb.velocity = rb.velocity + new Vector2(0.2f, 0.0f);
-        }
+        	bool rightEngineBurn = false;
+        	bool leftEngineBurn = false;
+        	bool bothEnginesBurn = false;
+        	bool brakingEnginesBurn = false;
 
-        // press space for pause
-        if(Input.GetKeyDown (KeyCode.Space)) 
-        {
-        	Debug.Log("Space pressed");
-            if (!pausePanel.activeInHierarchy) 
-            {
-                PauseGame();
-            } else if (pausePanel.activeInHierarchy) 
-            {
-                 ContinueGame();   
+            // touch screen touches
+        	foreach (Touch touch in Input.touches) {
+    	    	if(touch.position.x < Screen.width / 2) {
+    	    		left = true;
+    	    		if(touch.position.y < Screen.height / 2) {
+    	    			leftBottom = true;
+    	    		}
+        		}
+        		if(touch.position.x >= Screen.width / 2) {
+        			right = true;
+        			if(touch.position.y < Screen.height / 2) {
+    	    			rightBottom = true;
+    	    		}
+        		}
+        		if(touch.position.y >= Screen.height / 2) {
+        			top = true;
+        		}
+    	    }
+
+            // keyboard inputs
+            if(Input.GetKey(KeyCode.LeftArrow)) {
+                left = true;
+                leftBottom = true;
             }
+            if(Input.GetKey(KeyCode.RightArrow)) {
+                right = true;
+                rightBottom = true;
+            }
+            if(Input.GetKey(KeyCode.UpArrow)) {
+                top = true;
+            }
+
+            if(flipControls) {
+                bool temp = right;
+                right = left;
+                left = temp;
+
+                bool temp2 = rightBottom;
+                rightBottom = leftBottom;
+                leftBottom = temp2;
+            }
+
+    	    if(brakingEnable) {
+    	    	if(top) {
+    	    		brakingEnginesBurn = true;
+    	    	}
+                if(leftBottom && rightBottom) {
+                    bothEnginesBurn = true;
+                } else if(rightBottom) {
+    	    		rightEngineBurn = true;
+    	    	} else if(leftBottom) {
+    	    		leftEngineBurn = true;
+    	    	}
+    	    } else {
+    	    	if(left && right) {
+    	    		bothEnginesBurn = true;
+    	    	} else if(left) {
+    	    		leftEngineBurn = true;
+    	    	} else if(right) {
+    	    		rightEngineBurn = true;
+    	    	}
+    	    }
+
+        	// here is the final logic for the vectors
+        	if(bothEnginesBurn) {
+            	flameTextureR.SetActive(true);
+                flameTextureL.SetActive(true);
+                rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * speedScale, rb.transform.right[0] * speedScale);
+            }
+            if(rightEngineBurn) {
+            	flameTextureR.SetActive(true);
+                rb.angularVelocity = rb.angularVelocity + 1.0f * rotationScale;
+				rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * rotationSpeedScale, rb.transform.right[0] * rotationSpeedScale);
+            }
+            if(leftEngineBurn) {
+            	flameTextureL.SetActive(true);
+               	rb.angularVelocity = rb.angularVelocity - 1.0f * rotationScale;
+            	rb.velocity = rb.velocity + new Vector2(-rb.transform.right[1] * rotationSpeedScale, rb.transform.right[0] * rotationSpeedScale);
+           	}
+            if(brakingEnginesBurn) {
+            	rb.velocity = rb.velocity - new Vector2(-rb.transform.right[1] * brakingScale, rb.transform.right[0] * brakingScale);
+            	flameTextureR_F.SetActive(true);
+            	flameTextureL_F.SetActive(true);
+            }
+
+            // turn off engine flames here
+            if (!bothEnginesBurn) {
+                if(!rightEngineBurn) {
+                    flameTextureR.SetActive(false);
+                }
+                if(!leftEngineBurn) {
+                    flameTextureL.SetActive(false);
+                }
+            }
+            if(!brakingEnginesBurn) {
+                flameTextureR_F.SetActive(false);
+                flameTextureL_F.SetActive(false);
+            }
+            
+            // stop the engine sound if not any engine is on
+            if(!bothEnginesBurn && !rightEngineBurn && !leftEngineBurn && !brakingEnginesBurn) {
+                FindObjectOfType<AudioManager>().Stop("engine");
+            } else {    // otherwise play sound
+                FindObjectOfType<AudioManager>().Play("engine");
+            }
+
+            // slow down the rotation
+            rb.angularVelocity = rotationSlowingScale * rb.angularVelocity;   
+        } else {
+            FindObjectOfType<AudioManager>().Stop("engine");
         }
     }
 
     // on collision
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // Debug-draw all contact points and normals
-        foreach (ContactPoint2D contact in collision.contacts)
-        {
-            Debug.DrawRay(contact.point, contact.normal, Color.white);
-        }
-
+    	FindObjectOfType<AudioManager>().PlayMusic("bang_1");
+    	
         // take HP
         if (collision.otherCollider.GetType() == typeof(PolygonCollider2D))
         {
-        	HP = Mathf.Max(0, HP - Mathf.RoundToInt(collision.relativeVelocity.magnitude));
-        	HPtext.text = "HP: " + HP.ToString() + "/10";
+            float collisionPower = collision.relativeVelocity.magnitude;
+        	HP = Mathf.Max(0, HP - collisionPower * collisionPower);
+
+            float scaled = HP / MaxHP;
+            HPImage.fillAmount = scaled;
+            // flash red color
+            HPImage.color = HPcollide;
+            mainCamera.GetComponent<CameraController>().shake(collisionPower);
+
+            spark.SetActive(true);
+            spark.transform.position = collision.contacts[0].point;
+
+            FindObjectOfType<AudioManager>().Play("scartch");
         }
-        Debug.Log("Collider type: " + collision.otherCollider.GetType() + " new HP: " + HP);
     }
 
-    private void PauseGame()
+    void OnCollisionExit2D(Collision2D collision)
     {
-    	Debug.Log("Pause game");
-        Time.timeScale = 0;
-        pausePanel.SetActive(true);
-    } 
-    private void ContinueGame()
-    {
-    	Debug.Log("Continue game");
-        Time.timeScale = 1;
-        pausePanel.SetActive(false);
+        if (collision.otherCollider.GetType() == typeof(PolygonCollider2D))
+        {
+            float scaled = HP / MaxHP;
+            HPImage.fillAmount = scaled;
+            HPImage.color = Color.Lerp(HPempty, HPfull, scaled);
+
+            spark.SetActive(false);
+            FindObjectOfType<AudioManager>().Stop("scartch");
+        }
     }
+
+    // pickup for healing objects and keys
+    void OnTriggerEnter2D(Collider2D collider)
+    {
+    //if the next line is here, the sound is played 
+    //FindObjectOfType<AudioManager>().PlayMusic("pickup");
+    
+        if(collider.gameObject.tag == "energia") {
+        	FindObjectOfType<AudioManager>().PlayMusic("pickup");
+            HP = Mathf.Min(HP + healingHP, MaxHP);
+            float scaled = HP / MaxHP;
+            HPImage.fillAmount = scaled;
+            HPImage.color = Color.Lerp(HPempty, HPfull, scaled);
+
+            collider.gameObject.SetActive(false);
+        }
+
+        if(collider.gameObject.tag == "shield") {
+            collider.gameObject.SetActive(false);
+            FindObjectOfType<AudioManager>().PlayMusic("pickup");
+
+            if(PlayerPrefs.GetInt("shieldUpgrade") == 0) {
+                PlayerPrefs.SetInt("shieldUpgrade", 1);
+                MaxHP = 200;
+                HP = MaxHP;
+
+                GameObject.Find("HPImage").SetActive(false);
+                HPImageUpgraded.SetActive(true);
+                HPImage = GameObject.Find("HealthBarUpgraded").GetComponent<Image>();
+
+                float scaled = HP / MaxHP;
+                HPImage.fillAmount = scaled;
+                HPImage.color = Color.Lerp(HPempty, HPfull, scaled);                
+            }
+        }
         
+    }
+
+    public void freezePlayer() {
+        gameOn = false;
+    }
+    
+    public void unFreezePlayer() {
+        gameOn = true;
+    }   
+
 }

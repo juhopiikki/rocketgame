@@ -5,18 +5,25 @@ using UnityEngine.UI;
 
 public class WinZone : MonoBehaviour {
 
-	// text object for winning text
-	public Text win;
+	// text and buttons objects for winning menu objects
+	public Text winText;
+	public GameObject winButtons, winbuttons2;
+	public string levelPlrPrefName;
 
 	// Use this for initialization
 	void Start () {
-    	win.gameObject.SetActive(false);
+		winText.gameObject.SetActive(false);
+    	winButtons.SetActive(false);
 	}
 
 	// on collision
     void OnTriggerEnter2D(Collider2D collider)
     {
-    	Debug.Log("WIN");
-    	win.gameObject.SetActive(true);
+        PlayerPrefs.SetInt(levelPlrPrefName, 1);
+    	winText.gameObject.SetActive(true);
+    	winButtons.SetActive(true);
+    	if(levelPlrPrefName == "lvl3") {
+    		winbuttons2.SetActive(true);
+    	}
     }
 }

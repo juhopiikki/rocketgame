@@ -7,6 +7,18 @@ TagManager:
   - PauseMenu
   - HPText
   - LosePanel
+  - WinMenu
+  - PauseToggles
+  - energia
+  - avain
+  - ovi
+  - avainUI
+  - avain1UI
+  - avain2UI
+  - avain3UI
+  - shield
+  - winButtons
+  - laatikko
   layers:
   - Default
   - TransparentFX
@@ -17,7 +29,7 @@ TagManager:
   - 
   - 
   - Camera
-  - 
+  - IgnoreLight
   - 
   - 
   - 

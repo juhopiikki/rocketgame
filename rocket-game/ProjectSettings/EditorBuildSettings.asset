@@ -9,18 +9,36 @@ EditorBuildSettings:
     path: 
     guid: 00000000000000000000000000000000
   - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: 3094943cf48b5490bbc33c395c997d21
+  - enabled: 0
     path: Assets/Scenes/TutorialScene.unity
     guid: 8c6299f4b226d4954be6ddbee8bd8fec
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/SampleScene2.unity
     guid: a7efd0ed90d454b5d86efb1bd769828d
+  - enabled: 1
+    path: Assets/Scenes/OIKEA_LEVEL.unity
+    guid: 58da77d132f12496ca0a0be0cb254cb7
   - enabled: 0
     path: Assets/Scenes/level1.unity
     guid: 388c7d6fb6fb0453d91ced7251fdc5ac
-  - enabled: 1
+  - enabled: 0
+    path: Assets/Scenes/level2.unity
+    guid: 8db2289854f2140499d8ee0c451811ef
+  - enabled: 0
     path: Assets/Scenes/levelHard.unity
     guid: fd6b923a0d9553f45b9dd09a027f8b76
   - enabled: 1
-    path: Assets/Scenes/MainMenu.unity
-    guid: 3094943cf48b5490bbc33c395c997d21
+    path: Assets/Scenes/EscapeScene.unity
+    guid: 322c3d1e749a74d539d290b2640411bd
+  - enabled: 0
+    path: Assets/Scenes/level collect stuff.unity
+    guid: 3fd29e2d3ba9de54f9eef89c38a512d2
+  - enabled: 1
+    path: Assets/Scenes/Tutorial.unity
+    guid: 2c677f9e2cf7b4cfbad73e785b85b032
+  - enabled: 1
+    path: Assets/Scenes/METEOROIDS.unity
+    guid: f468674169d8f4386a03de0960f8e5ef
   m_configObjects: {}
